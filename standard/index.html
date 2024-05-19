@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+	<head>
+    	<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    
+    	<!-- iOS meta tags -->
+    	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+    	<meta name="apple-mobile-web-app-capable" content="yes">
+    	<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+		<script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+		<link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+		<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    
+    	<link rel="stylesheet" type="text/css" href="papaya.css?build=1455" />
+		<link rel="stylesheet" href="./surface.css">
+    	<script type="text/javascript" src="papaya.js?build=1455"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.5.4/socket.io.js"></script>
+    	<title>Papaya Viewer</title>
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    	<script type="text/javascript">
+var params = [];
+</script>
+
+	</head>
+
+	<body>
+	<div id="map" class="not-active">
+		<i class="fa-solid fa-xmark" onclick="closeMap()"></i>
+	</div>
+		<div class="navbar">
+			<div class="title">Brain Tumor Dectection</div>
+			<div class="nav-list">
+				<div class="nav-items">Home Page</div>
+				<div class="nav-items" onclick="showMap()">Hospital</div>
+				<div class="nav-items">About Brain Tumor</div>
+			</div>
+		</div>
+
+		<div class="main" onclick="closeMap()">
+			<div class="upload-container">
+				<h1>Upload Thư Mục</h1> 
+				<input type="file" id="folderInput" webkitdirectory directory multiple> 
+				<button id="uploadBtn" >Tải Lên</button> 
+			</div>
+			<div class="outside not-active">
+				<div class="papaya"></div>
+				<div class="papaya"></div>
+				<div class="papaya"></div>
+			</div>
+		</div>
+		<div class="selection not-active">
+			<div class="option">
+			  <h3>T1</h3>
+			  <p>Lựa chọn 1</p>
+			</div>
+			<div id="option1" class="option">
+			  <h3>T2</h3>
+			  <p>Lựa chọn 2</p>
+			</div>
+			<div id="option2" class="option">
+			  <h3>T1CE</h3>
+			  <p>Lựa chọn 3</p>
+			</div>
+			<div id="option3" class="option">
+			  <h3>Flair</h3>
+			  <p>Lựa chọn 4</p>
+			</div>
+			<div id="option4" class="option detection">
+				<h3>Giải</h3>
+				<p>Lựa chọn 5</p>
+			  </div>
+		  </div>
+
+	</body>
+	<script src="./source.js"></script>
+	<script type="text/javascript">
+		var params = {};
+		params["worldSpace"] = true;
+		params["images"] = ["C:/Users/jizer/OneDrive/Máy tính/ReadNifti/uploads/BraTS20_Training_003/BraTS20_Training_003_t1ce.nii.gz"];
+		params["myOverlayImage.nii.gz"] = {"min": 4, "max": 10};
+	
+		// Gán giá trị của params cho thuộc tính data-params của thẻ div
+		document.querySelector('.papaya').setAttribute('data-params', JSON.stringify(params));
+	</script>
+	
+	<script src="./treatment.js"></script>
+	<script>
+		// Hàm để lưu trạng thái của phần div chọn vào local storage
+		function saveSelectionState(state) {
+		localStorage.setItem('selection', state);
+		}
+
+		// Hàm để khởi tạo trạng thái của phần div chọn dựa trên local storage
+		function initializeSelectionState() {
+		var selection = document.querySelector('.selection');
+		var isOpen = localStorage.getItem('selection');
+
+
+		// Nếu không có trạng thái được lưu, mặc định là đóng
+		if (isOpen === null) {
+			selection.classList.add('not-active'); // Đảm bảo nó đóng nếu không có trạng thái
+			saveSelectionState('no');
+		} else if (isOpen === 'no') {
+			selection.classList.add('not-active'); // Đóng phần tử nếu trạng thái là 'no'
+		} else {
+			selection.classList.remove('not-active'); // Mở phần tử nếu trạng thái là 'yes'
+		}
+		}
+
+		// Gọi hàm initializeSelectionState khi tài liệu được tải
+		document.addEventListener('DOMContentLoaded', initializeSelectionState);
+
+		// Hàm để chuyển đổi trạng thái của phần div chọn và lưu vào local storage
+		function toggleSelection() {
+		var selection = document.querySelector('.selection');
+		selection.classList.toggle('not-active');
+
+		// Lấy trạng thái hiện tại của phần div chọn
+		var isOpen = !selection.classList.contains('not-active');
+
+		// Lưu trạng thái vào local storage
+		if (isOpen) {
+			saveSelectionState('yes');
+		} else {
+			saveSelectionState('no');
+		}
+		}
+
+	// Gán sự kiện cho nút "Tải Lên" để gọi hàm toggleSelection()
+	var uploadBtn = document.getElementById('uploadBtn');
+
+
+	function getPrefTumor() {
+    var filePath = "C:\\Users\\jizer\\OneDrive\\Máy tính\\ReadNifti\\pref_Tumor.nii.gz";
+
+    // Tạo một đối tượng FileReader
+    var reader = new FileReader();
+
+    // Đọc nội dung của tệp nifti
+    reader.readAsDataURL(new Blob([filePath]));
+
+    // Khi quá trình đọc hoàn tất
+    reader.onload = function(event) {
+        // Nội dung của tệp nifti (dạng base64)
+        var niftiData = event.target.result;
+
+        // Tạo một đường dẫn URL blob từ nội dung nifti
+        var niftiBlob = new Blob([niftiData], { type: 'application/octet-stream' });
+        var niftiUrl = URL.createObjectURL(niftiBlob);
+
+        // // Tạo một thẻ div mới
+        // var papayaDiv = document.createElement('div');
+        // papayaDiv.classList.add('papaya');
+
+		papayaDiv = document.querySelector('.papaya')
+
+        var viewer = new Papaya.Viewer(papayaDiv, {
+            images: [niftiUrl]
+        });
+
+        // Tìm thẻ div có class là "outside" và thêm thẻ div mới vào đó
+        var outsideDiv = document.querySelector('.outside');
+        outsideDiv.appendChild(papayaDiv);
+    };
+}
+
+
+
+
+	// Lấy đối tượng div có class là "detection"
+	var detectionDiv = document.querySelector('.detection');
+
+	// Thêm sự kiện click cho đối tượng div "detection"
+	detectionDiv.addEventListener('click', function() {
+		getPrefTumor();
+	});
+
+	
+	</script>
+	
+</html>
